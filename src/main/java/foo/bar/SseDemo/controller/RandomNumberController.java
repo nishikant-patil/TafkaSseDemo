@@ -22,11 +22,20 @@ public class RandomNumberController {
     @GetMapping(path = "/random-numbers", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamRandomNumbers() {
         logger.info("New client connected, registering with the random number generated :D");
-        var sseEmitter = new SseEmitter();
+        var sseEmitter = new SseEmitter(5 * 60 * 60 * 1000L);
         randomNumberGeneratorService.registerSseEmitter(sseEmitter);
-        sseEmitter.onCompletion(() -> randomNumberGeneratorService.deRegisterSseEmitter(sseEmitter));
-        sseEmitter.onError((e) -> randomNumberGeneratorService.deRegisterSseEmitter(sseEmitter));
-        sseEmitter.onTimeout(() -> randomNumberGeneratorService.deRegisterSseEmitter(sseEmitter));
+        sseEmitter.onCompletion(() -> {
+            logger.info("Deregistering {} due to completion", sseEmitter);
+            randomNumberGeneratorService.deRegisterSseEmitter(sseEmitter);
+        });
+        sseEmitter.onError((e) -> {
+            logger.error("Deregistering {} due to error {}", sseEmitter, e.getMessage());
+            randomNumberGeneratorService.deRegisterSseEmitter(sseEmitter);
+        });
+        sseEmitter.onTimeout(() -> {
+            logger.warn("Deregistering {} due to timeout", sseEmitter);
+            randomNumberGeneratorService.deRegisterSseEmitter(sseEmitter);
+        });
         return sseEmitter;
     }
 }
