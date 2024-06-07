@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Numbers</title>
+</head>
+<body>
+<h1>Random Numbers</h1>
+<ul id="numbers"></ul>
+
+<script>
+    const eventSource = new EventSource('http://localhost:1337/random-numbers');
+    const numbersList = document.getElementById('numbers');
+
+    eventSource.onmessage = function(event) {
+        const newNumber = document.createElement('li');
+        newNumber.textContent = event.data;
+        numbersList.appendChild(newNumber);
+    };
+
+    eventSource.onerror = function() {
+        console.error('Error occurred while receiving SSE');
+        eventSource.close();
+    };
+</script>
+</body>
+</html>
